@@ -28,6 +28,7 @@ venv
 
 # others
 *.log
+*.png
 
 # latex
 # thanks to everyone who wrote:
