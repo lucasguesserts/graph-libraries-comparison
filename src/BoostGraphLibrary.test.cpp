@@ -10,8 +10,10 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
-#include <unordered_map>
+#include <random>
+#include <set>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -109,7 +111,48 @@ TEST_CASE("Adding Some Color to your Graph", "[BoostGraphLibrary]") {
     return;
 }
 
+struct RandomGenerator {
+    static constexpr int RANDOM_SEED = 1234;
+    std::default_random_engine random_engine;
+
+    RandomGenerator()
+        : random_engine(RANDOM_SEED) {}
+
+    auto generate_vertices(const int & low, const int & high, const std::size_t & count) -> std::vector<int> {
+        std::uniform_int_distribution<int> uniform_distribution(low, high);
+        auto vertices = std::set<int>{};
+        if (high <= low) {
+            throw std::runtime_error("invalid range for high and low");
+        }
+        if (static_cast<std::size_t>(high - low) < count) {
+            throw std::runtime_error("too many vertices to generate");
+        }
+        while (vertices.size() < count) {
+            vertices.insert(uniform_distribution(random_engine));
+        }
+        return std::vector<int>(vertices.begin(), vertices.end());
+    }
+
+    auto generate_edges(const std::vector<int> & vertices, const std::size_t & count) -> std::set<std::pair<int, int>> {
+        std::uniform_int_distribution<int> uniform_distribution(0, vertices.size() - 1);
+        auto edges = std::set<std::pair<int, int>>{};
+        if (vertices.size() * vertices.size() < count) {
+            throw std::runtime_error("too many edges to generate");
+        }
+        while (edges.size() < count) {
+            auto first = uniform_distribution(random_engine);
+            auto second = first;
+            while (first == second) {
+                second = uniform_distribution(random_engine);
+            }
+            edges.insert({vertices[first], vertices[second]});
+        }
+        return edges;
+    }
+};
+
 TEST_CASE("create my use case", "[BoostGraphLibrary]") {
+    // types definition
     using Graph = boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS>;
     using Vertex = boost::graph_traits<Graph>::vertex_descriptor;
     using Edge = boost::graph_traits<Graph>::edge_descriptor;
@@ -123,15 +166,20 @@ TEST_CASE("create my use case", "[BoostGraphLibrary]") {
         }
     };
 
-    auto vertices = std::vector<int>{96, 44, 0, 91, 93, 58, 67, 8, 76, 23};
-    auto edges = std::vector<EdgeIndicesPair>{{96, 91}, {93, 76}, {44, 0}, {44, 58}, {67, 0}, {91, 58}, {96, 0}, {67, 44}, {44, 76}, {8, 76}};
+    // vertices and edges
+    auto random_generator = RandomGenerator();
+    auto vertices = random_generator.generate_vertices(0, 100, 10);
+    auto edges = random_generator.generate_edges(vertices, 10);
 
+    // generate graph
     Graph g;
     auto vertex_map = std::unordered_map<int, Vertex>{};
     auto edge_map = std::unordered_map<EdgeIndicesPair, Edge, EdgeIndicesPairHash>{};
+    //// add vertices
     for (const auto & v : vertices) {
         vertex_map[v] = boost::add_vertex(g);
     }
+    //// add edges
     for (const auto & e : edges) {
         if (vertex_map.find(e.first) == vertex_map.end() || vertex_map.find(e.second) == vertex_map.end()) {
             throw std::runtime_error("vertex " + std::to_string(e.first) + " or " + std::to_string(e.second) + "not found");
