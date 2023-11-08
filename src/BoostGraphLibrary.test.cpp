@@ -168,25 +168,27 @@ TEST_CASE("create my use case", "[BoostGraphLibrary]") {
 
     // vertices and edges
     auto random_generator = RandomGenerator();
-    auto vertices = random_generator.generate_vertices(0, 100, 10);
-    auto edges = random_generator.generate_edges(vertices, 10);
+    auto vertices = random_generator.generate_vertices(0, 10000, 1000);
+    auto edges = random_generator.generate_edges(vertices, 1000);
 
-    // generate graph
-    Graph g;
-    auto vertex_map = std::unordered_map<int, Vertex>{};
-    auto edge_map = std::unordered_map<EdgeIndicesPair, Edge, EdgeIndicesPairHash>{};
-    //// add vertices
-    for (const auto & v : vertices) {
-        vertex_map[v] = boost::add_vertex(g);
-    }
-    //// add edges
-    for (const auto & e : edges) {
-        if (vertex_map.find(e.first) == vertex_map.end() || vertex_map.find(e.second) == vertex_map.end()) {
-            throw std::runtime_error("vertex " + std::to_string(e.first) + " or " + std::to_string(e.second) + "not found");
+    BENCHMARK("make graph") {
+        Graph g;
+        auto vertex_map = std::unordered_map<int, Vertex>{};
+        auto edge_map = std::unordered_map<EdgeIndicesPair, Edge, EdgeIndicesPairHash>{};
+        //// add vertices - guaranteed to be unique
+        for (const auto & v : vertices) {
+            vertex_map[v] = boost::add_vertex(g);
         }
-        auto ret = boost::add_edge(vertex_map[e.first], vertex_map[e.second], g);
-        if (ret.second) {
+        //// add edges - guaranteed to be unique and valid
+        for (const auto & e : edges) {
+            // if (vertex_map.find(e.first) == vertex_map.end() || vertex_map.find(e.second) == vertex_map.end()) {
+            //     throw std::runtime_error("vertex " + std::to_string(e.first) + " or " + std::to_string(e.second) + "not found");
+            // }
+            auto ret = boost::add_edge(vertex_map[e.first], vertex_map[e.second], g);
             edge_map[e] = ret.first;
+            // if (ret.second) {
+            //     edge_map[e] = ret.first;
+            // }
         }
-    }
+    };
 }
