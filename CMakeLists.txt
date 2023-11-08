@@ -32,6 +32,11 @@ CPMAddPackage(
     OPTIONS
         "CMAKE_CXX_FLAGS -fPIC"
 )
+## Boost
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED OFF)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost COMPONENTS graph REQUIRED)
 
 # Tests
 include (CTest)
@@ -42,3 +47,10 @@ target_link_libraries(Catch.test PRIVATE Catch2::Catch2WithMain)
 target_compile_options(Catch.test PRIVATE -ggdb3 -Wall -Wextra -pedantic-errors -fmax-errors=1 -Wno-error=ignored-qualifiers)
 target_compile_features(Catch.test PRIVATE cxx_std_17)
 add_test(NAME Catch.test COMMAND Catch.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Boost Graph Library test
+add_executable(BoostGraphLibrary.test src/BoostGraphLibrary.test.cpp)
+target_link_libraries(BoostGraphLibrary.test PRIVATE Catch2::Catch2WithMain Boost::graph)
+target_compile_options(BoostGraphLibrary.test PRIVATE -ggdb3 -Wall -Wextra -pedantic-errors -fmax-errors=1 -Wno-error=ignored-qualifiers)
+target_compile_features(BoostGraphLibrary.test PRIVATE cxx_std_17)
+add_test(NAME BoostGraphLibrary.test COMMAND BoostGraphLibrary.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
