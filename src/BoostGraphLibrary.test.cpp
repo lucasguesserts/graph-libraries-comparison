@@ -1,4 +1,3 @@
-#include <boost/container_hash/hash_fwd.hpp>
 #include <catch2/catch_all.hpp>
 
 #include <boost/config.hpp>
