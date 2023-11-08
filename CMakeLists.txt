@@ -37,6 +37,9 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED OFF)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.78 REQUIRED COMPONENTS graph)
+## Lemon
+set(LEMON_DIR "/opt/lemon")
+find_package(LEMON REQUIRED)
 
 # Tests
 include (CTest)
@@ -54,3 +57,11 @@ target_link_libraries(BoostGraphLibrary.test PRIVATE Catch2::Catch2WithMain Boos
 target_compile_options(BoostGraphLibrary.test PRIVATE -ggdb3 -Wall -Wextra -pedantic-errors -fmax-errors=1 -Wno-error=ignored-qualifiers)
 target_compile_features(BoostGraphLibrary.test PRIVATE cxx_std_17)
 add_test(NAME BoostGraphLibrary.test COMMAND BoostGraphLibrary.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Boost Graph Library test
+add_executable(Lemon.test src/Lemon.test.cpp)
+target_include_directories(Lemon.test PRIVATE ${LEMON_INCLUDE_DIRS})
+target_link_libraries(Lemon.test PRIVATE Catch2::Catch2WithMain ${LEMON_LIBRARIES})
+target_compile_options(Lemon.test PRIVATE -ggdb3 -Wall -Wextra -pedantic-errors -fmax-errors=1 -Wno-error=ignored-qualifiers)
+target_compile_features(Lemon.test PRIVATE cxx_std_17)
+add_test(NAME Lemon.test COMMAND Lemon.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
