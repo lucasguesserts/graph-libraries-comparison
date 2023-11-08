@@ -1,16 +1,19 @@
-#include <boost/graph/detail/adjacency_list.hpp>
-#include <boost/graph/graph_selectors.hpp>
+#include <boost/container_hash/hash_fwd.hpp>
 #include <catch2/catch_all.hpp>
+
+#include <boost/config.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/utility.hpp> // boost::tie
 
 #include <algorithm>
 #include <array>
 #include <iostream>
+#include <unordered_map>
+#include <stdexcept>
 #include <utility>
 #include <vector>
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <boost/graph/graph_traits.hpp>
 
 TEST_CASE("Constructing a Graph", "[BoostGraphLibrary]") {
     // create a typedef for the Graph type
@@ -104,4 +107,38 @@ TEST_CASE("Adding Some Color to your Graph", "[BoostGraphLibrary]") {
                   << d[*vi] << std::endl;
     std::cout << std::endl;
     return;
+}
+
+TEST_CASE("create my use case", "[BoostGraphLibrary]") {
+    using Graph = boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS>;
+    using Vertex = boost::graph_traits<Graph>::vertex_descriptor;
+    using Edge = boost::graph_traits<Graph>::edge_descriptor;
+    using EdgeIndicesPair = std::pair<int, int>;
+    struct EdgeIndicesPairHash {
+        std::size_t operator()(const EdgeIndicesPair & p) const {
+            auto seed = std::size_t(31);
+            boost::hash_combine(seed, p.first);
+            boost::hash_combine(seed, p.second);
+            return seed;
+        }
+    };
+
+    auto vertices = std::vector<int>{96, 44, 0, 91, 93, 58, 67, 8, 76, 23};
+    auto edges = std::vector<EdgeIndicesPair>{{96, 91}, {93, 76}, {44, 0}, {44, 58}, {67, 0}, {91, 58}, {96, 0}, {67, 44}, {44, 76}, {8, 76}};
+
+    Graph g;
+    auto vertex_map = std::unordered_map<int, Vertex>{};
+    auto edge_map = std::unordered_map<EdgeIndicesPair, Edge, EdgeIndicesPairHash>{};
+    for (const auto & v : vertices) {
+        vertex_map[v] = boost::add_vertex(g);
+    }
+    for (const auto & e : edges) {
+        if (vertex_map.find(e.first) == vertex_map.end() || vertex_map.find(e.second) == vertex_map.end()) {
+            throw std::runtime_error("vertex " + std::to_string(e.first) + " or " + std::to_string(e.second) + "not found");
+        }
+        auto ret = boost::add_edge(vertex_map[e.first], vertex_map[e.second], g);
+        if (ret.second) {
+            edge_map[e] = ret.first;
+        }
+    }
 }
