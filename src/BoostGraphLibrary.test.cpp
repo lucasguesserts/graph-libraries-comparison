@@ -168,27 +168,60 @@ TEST_CASE("create my use case", "[BoostGraphLibrary]") {
 
     // vertices and edges
     auto random_generator = RandomGenerator();
-    auto vertices = random_generator.generate_vertices(0, 10000, 1000);
-    auto edges = random_generator.generate_edges(vertices, 1000);
+    const int ROUNDS = 3;
+    const auto vertices_range = std::vector<std::pair<int, int>>{
+        {0, 10000},
+        {10001, 20000},
+        {20001, 30000},
+    };
+    const auto vertices_size = std::vector<int>{
+        1000,
+        1000,
+        1000,
+    };
+    const auto edges_size = std::vector<int>{
+        1000,
+        1000,
+        1000,
+    };
+    auto vertices = std::vector<std::vector<int>>();
+    auto edges = std::vector<std::set<std::pair<int, int>>>();
+    for (int i = 0; i < ROUNDS; ++i) {
+        vertices.push_back(
+            random_generator.generate_vertices(
+                vertices_range[i].first,
+                vertices_range[i].second,
+                vertices_size[i]));
+        edges.push_back(
+            random_generator.generate_edges(
+                vertices[i],
+                edges_size[i]));
+    }
 
     BENCHMARK("make graph") {
         Graph g;
         auto vertex_map = std::unordered_map<int, Vertex>{};
         auto edge_map = std::unordered_map<EdgeIndicesPair, Edge, EdgeIndicesPairHash>{};
-        //// add vertices - guaranteed to be unique
-        for (const auto & v : vertices) {
-            vertex_map[v] = boost::add_vertex(g);
-        }
-        //// add edges - guaranteed to be unique and valid
-        for (const auto & e : edges) {
-            // if (vertex_map.find(e.first) == vertex_map.end() || vertex_map.find(e.second) == vertex_map.end()) {
-            //     throw std::runtime_error("vertex " + std::to_string(e.first) + " or " + std::to_string(e.second) + "not found");
-            // }
-            auto ret = boost::add_edge(vertex_map[e.first], vertex_map[e.second], g);
-            edge_map[e] = ret.first;
-            // if (ret.second) {
-            //     edge_map[e] = ret.first;
-            // }
+        for (int i = 0; i < ROUNDS; ++i) {
+            //// add vertices - guaranteed to be unique
+            for (const auto & v : vertices[i]) {
+                vertex_map[v] = boost::add_vertex(g);
+            }
+            //// add edges - guaranteed to be unique and valid
+            for (const auto & e : edges[i]) {
+                // if (vertex_map.find(e.first) == vertex_map.end() || vertex_map.find(e.second) == vertex_map.end()) {
+                //     throw std::runtime_error("vertex " + std::to_string(e.first) + " or " + std::to_string(e.second) + "not found");
+                // }
+                auto ret = boost::add_edge(vertex_map[e.first], vertex_map[e.second], g);
+                edge_map[e] = ret.first;
+                // if (ret.second) {
+                //     edge_map[e] = ret.first;
+                // }
+            }
+            // remove all vertices
+            for (const auto & v : vertices[i]) {
+                boost::remove_vertex(vertex_map[v], g);
+            }
         }
     };
 }
